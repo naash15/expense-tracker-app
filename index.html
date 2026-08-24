@@ -109,24 +109,15 @@
         import { getAuth, signInWithEmailAndPassword, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.4.0/firebase-auth.js";
         import { getFirestore, doc, getDoc, setDoc } from "https://www.gstatic.com/firebasejs/10.4.0/firebase-firestore.js";
 
-        // 2. PASTE YOUR FIREBASE CONFIG HERE
-        // Import the functions you need from the SDKs you need
-import { initializeApp } from "firebase/app";
-// TODO: Add SDKs for Firebase products that you want to use
-// https://firebase.google.com/docs/web/setup#available-libraries
-
-// Your web app's Firebase configuration
-const firebaseConfig = {
-  apiKey: "AIzaSyDEJZzFtITgSstK9Kd5jV9KnUriw3EZv6M",
-  authDomain: "my-expense-tracker-30b57.firebaseapp.com",
-  projectId: "my-expense-tracker-30b57",
-  storageBucket: "my-expense-tracker-30b57.firebasestorage.app",
-  messagingSenderId: "931806220777",
-  appId: "1:931806220777:web:7aad0217e0d0ae7e7bbb78"
-};
-
-// Initialize Firebase
-const app = initializeApp(firebaseConfig);
+        // 2. YOUR FIREBASE CONFIG
+        const firebaseConfig = {
+          apiKey: "AIzaSyDEJZzFtITgSstK9Kd5jV9KnUriw3EZv6M",
+          authDomain: "my-expense-tracker-30b57.firebaseapp.com",
+          projectId: "my-expense-tracker-30b57",
+          storageBucket: "my-expense-tracker-30b57.firebasestorage.app",
+          messagingSenderId: "931806220777",
+          appId: "1:931806220777:web:7aad0217e0d0ae7e7bbb78"
+        };
 
         // Initialize Firebase
         const app = initializeApp(firebaseConfig);
@@ -162,7 +153,7 @@ const app = initializeApp(firebaseConfig);
         const tabs = { projected: document.getElementById('tab-projected'), actual: document.getElementById('tab-actual'), savings: document.getElementById('tab-savings') };
 
         // Authentication Logic
-                document.getElementById('login-btn').addEventListener('click', () => {
+        document.getElementById('login-btn').addEventListener('click', () => {
             const email = document.getElementById('email').value;
             const pass = document.getElementById('password').value;
             const errorText = document.getElementById('auth-error');
@@ -184,7 +175,6 @@ const app = initializeApp(firebaseConfig);
                     btn.textContent = "Sign In";
                 });
         });
-
 
         document.getElementById('logout-btn').addEventListener('click', () => signOut(auth));
 
@@ -313,4 +303,5 @@ const app = initializeApp(firebaseConfig);
     </script>
 </body>
 </html>
+
 
