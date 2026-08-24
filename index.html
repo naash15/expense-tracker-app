@@ -162,16 +162,29 @@ const app = initializeApp(firebaseConfig);
         const tabs = { projected: document.getElementById('tab-projected'), actual: document.getElementById('tab-actual'), savings: document.getElementById('tab-savings') };
 
         // Authentication Logic
-        document.getElementById('login-btn').addEventListener('click', () => {
+                document.getElementById('login-btn').addEventListener('click', () => {
             const email = document.getElementById('email').value;
             const pass = document.getElementById('password').value;
-            signInWithEmailAndPassword(auth, email, pass).catch(err => {
-                document.getElementById('auth-error').textContent = err.message;
-                document.getElementById('auth-error').classList.remove('hidden');
-                // Temporary bypass for testing UI before Auth is fully configured
-                showApp(); 
-            });
+            const errorText = document.getElementById('auth-error');
+            const btn = document.getElementById('login-btn');
+            
+            // Clear old errors and show loading state
+            errorText.classList.add('hidden');
+            btn.textContent = "Authenticating...";
+
+            signInWithEmailAndPassword(auth, email, pass)
+                .then((userCredential) => {
+                    // Success! Push directly to the tracker.
+                    showApp();
+                })
+                .catch((err) => {
+                    // Failed! Show the actual error on screen and reset the button.
+                    errorText.textContent = "Error: " + err.message;
+                    errorText.classList.remove('hidden');
+                    btn.textContent = "Sign In";
+                });
         });
+
 
         document.getElementById('logout-btn').addEventListener('click', () => signOut(auth));
 
