@@ -30,7 +30,6 @@
         <div class="bg-slate-800 p-6 rounded-xl w-full max-w-sm shadow-lg">
             <input type="email" id="email" placeholder="Email" class="mb-4">
             <input type="password" id="password" placeholder="Password" class="mb-6">
-            <!-- HARDWIRED ONCLICK EVENT ADDED HERE -->
             <button id="login-btn" class="btn-primary w-full" onclick="handleLogin()">Sign In</button>
             <p id="auth-error" class="text-red-400 text-sm mt-3 text-center hidden"></p>
         </div>
@@ -79,50 +78,37 @@
             </div>
         </div>
 
-        <!-- Analytics Toggle -->
-        <div class="px-4 pt-4 text-center">
-            <button id="toggle-charts" class="text-sm text-sky-400 hover:text-sky-300"><i class="fa-solid fa-chart-pie mr-1"></i> Toggle Analytics Graph</button>
-            <div id="charts-container" class="hidden mt-4 bg-slate-800 p-4 rounded-xl shadow-lg">
-                <canvas id="expenseChart" height="200"></canvas>
-            </div>
-        </div>
-
         <!-- Navigation Tabs -->
         <div class="flex justify-around bg-slate-900 border-b border-slate-700 mt-4 px-2 sticky top-[120px] z-10">
-            <button id="tab-projected" class="pb-2 px-4 tab-active font-semibold text-sm">Projected</button>
-            <button id="tab-actual" class="pb-2 px-4 text-slate-400 font-semibold text-sm">Actual Tracker</button>
+            <button id="tab-tracker" class="pb-2 px-4 tab-active font-semibold text-sm">Main Tracker</button>
             <button id="tab-savings" class="pb-2 px-4 text-slate-400 font-semibold text-sm">Global Savings</button>
         </div>
 
         <!-- Content Area -->
         <main class="flex-1 p-4 pb-20 overflow-y-auto">
             
-            <!-- Projected View -->
-            <div id="view-projected" class="space-y-4">
-                <div class="bg-slate-800 p-4 rounded-xl flex justify-between items-center shadow-md">
-                    <span class="text-slate-400 text-sm">Projected Remaining</span>
-                    <span id="proj-remaining" class="text-xl font-bold text-emerald-400">R 0</span>
-                </div>
-                <div id="projected-list" class="space-y-2"></div>
-                <button class="btn-primary w-full mt-4 bg-slate-700 hover:bg-slate-600 border border-slate-600" onclick="addEntry('projected')">+ Add Expected Item</button>
-            </div>
-
-            <!-- Actual View -->
-            <div id="view-actual" class="hidden space-y-4">
+            <!-- Main Tracker View -->
+            <div id="view-tracker" class="space-y-4">
                 <div class="bg-slate-800 p-4 rounded-xl grid grid-cols-2 gap-4 shadow-md">
                     <div>
                         <span class="text-slate-400 text-xs block">Total Income</span>
-                        <span id="actual-income" class="text-lg font-bold text-emerald-400">R 0</span>
+                        <span id="tracker-income" class="text-lg font-bold text-emerald-400">R 0</span>
                     </div>
                     <div class="text-right">
                         <span class="text-slate-400 text-xs block">Total Spent</span>
-                        <span id="actual-total" class="text-lg font-bold text-rose-400">R 0</span>
+                        <span id="tracker-spent" class="text-lg font-bold text-rose-400">R 0</span>
+                    </div>
+                    <div class="col-span-2 border-t border-slate-700 pt-2 flex justify-between items-center">
+                        <span class="text-slate-400 text-sm">Net Remaining</span>
+                        <span id="tracker-net" class="text-xl font-bold text-sky-400">R 0</span>
                     </div>
                 </div>
-                <div id="actual-list" class="space-y-2"></div>
+                
+                <div id="tracker-list" class="space-y-2"></div>
+                
                 <div class="flex gap-2 mt-4">
-                    <button class="btn-primary flex-1 bg-emerald-600 hover:bg-emerald-700" onclick="addEntry('actual', true)">+ Log Income</button>
-                    <button class="btn-primary flex-1 bg-rose-600 hover:bg-rose-700" onclick="addEntry('actual', false)">+ Log Expense</button>
+                    <button class="btn-primary flex-1 bg-emerald-600 hover:bg-emerald-700" onclick="addEntry('tracker', true)">+ Add Income</button>
+                    <button class="btn-primary flex-1 bg-rose-600 hover:bg-rose-700" onclick="addEntry('tracker', false)">+ Add Expense</button>
                 </div>
             </div>
 
@@ -139,11 +125,10 @@
         </main>
     </div>
 
-    <!-- Firebase and Logic Scripts -->
+    <!-- Logic Scripts -->
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.4.0/firebase-app.js";
         import { getAuth, signInWithEmailAndPassword, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.4.0/firebase-auth.js";
-        import { getFirestore } from "https://www.gstatic.com/firebasejs/10.4.0/firebase-firestore.js";
 
         const firebaseConfig = {
           apiKey: "AIzaSyDEJZzFtITgSstK9Kd5jV9KnUriw3EZv6M",
@@ -156,39 +141,45 @@
 
         const app = initializeApp(firebaseConfig);
         const auth = getAuth(app);
-        const db = getFirestore(app);
 
-        // Data State Management
-        let currentMonth = localStorage.getItem('defaultMonth') || '2026-09';
-        let chartInstance = null;
-        
-        let dbState = {
-            '2026-09': {
-                fuel: { budget: 2000, used: 450 },
-                projected: [
-                    { id: 1, name: 'Takealot Salary', amount: 23045, isIncome: true },
-                    { id: 2, name: 'Standard Bank Bond', amount: 9880, isIncome: false },
-                    { id: 3, name: 'UNISA', amount: 2500, isIncome: false }
-                ],
-                actual: [
-                    { id: 1, name: 'Salary Paid', amount: 23045, isIncome: true },
-                    { id: 2, name: 'Woolies', amount: 120, isIncome: false },
-                    { id: 3, name: 'Playtomic App', amount: 150, isIncome: false }
-                ],
-                savings: [
-                    { id: 1, name: 'Tokyo Trip Fund', amount: 15000 },
-                    { id: 2, name: 'Joint Savings (Aneeqah & I)', amount: 5000 }
-                ]
+        // Persistent Data Engine
+        let currentMonth = localStorage.getItem('defaultMonth') || '2026-08';
+        let dbState = {};
+
+        function loadData() {
+            const savedData = localStorage.getItem('financeTrackerData');
+            if (savedData) {
+                dbState = JSON.parse(savedData);
+            } else {
+                // Default setup if first time loading
+                dbState = {
+                    '2026-08': {
+                        fuel: { budget: 2000, used: 0 },
+                        tracker: [
+                            { id: 1, name: 'Salary', amount: 23045, isIncome: true, pinned: true },
+                            { id: 2, name: 'Medical Aid', amount: 1500, isIncome: false, pinned: true },
+                            { id: 3, name: 'Afrihost', amount: 899, isIncome: false, pinned: true }
+                        ],
+                        savings: [
+                            { id: 1, name: 'Tokyo Trip Fund', amount: 15000 }
+                        ]
+                    }
+                };
+                saveData();
             }
-        };
+        }
+
+        function saveData() {
+            localStorage.setItem('financeTrackerData', JSON.stringify(dbState));
+        }
 
         // DOM Elements
         const screens = { login: document.getElementById('login-screen'), app: document.getElementById('app-dashboard') };
-        const views = { projected: document.getElementById('view-projected'), actual: document.getElementById('view-actual'), savings: document.getElementById('view-savings') };
-        const tabs = { projected: document.getElementById('tab-projected'), actual: document.getElementById('tab-actual'), savings: document.getElementById('tab-savings') };
+        const views = { tracker: document.getElementById('view-tracker'), savings: document.getElementById('view-savings') };
+        const tabs = { tracker: document.getElementById('tab-tracker'), savings: document.getElementById('tab-savings') };
         const monthSelect = document.getElementById('month-selector');
 
-        // DIRECT AUTH FUNCTIONS
+        // Auth
         window.handleLogin = function() {
             const email = document.getElementById('email').value;
             const pass = document.getElementById('password').value;
@@ -207,15 +198,14 @@
                 });
         };
 
-        window.handleLogout = function() {
-            signOut(auth);
-        };
+        window.handleLogout = function() { signOut(auth); };
 
         onAuthStateChanged(auth, user => { user ? showApp() : (screens.login.classList.remove('hidden'), screens.app.classList.add('hidden')) });
 
         function showApp() {
             screens.login.classList.add('hidden');
             screens.app.classList.remove('hidden');
+            loadData();
             updateMonthDropdown();
             renderUI();
         }
@@ -245,10 +235,21 @@
         monthSelect.addEventListener('change', (e) => { currentMonth = e.target.value; renderUI(); });
         
         document.getElementById('add-month-btn').addEventListener('click', () => {
-            const newM = prompt("Enter new month (e.g. 2026-10):");
+            const newM = prompt("Enter new month (e.g. 2026-09):");
             if (newM && !dbState[newM]) {
-                dbState[newM] = { fuel: { budget: 0, used: 0 }, projected: [], actual: [], savings: [] };
+                const oldM = Object.keys(dbState).sort().pop();
+                let carriedOver = [];
+                
+                // Copy pinned items from the most recent month
+                if (oldM && dbState[oldM].tracker) {
+                    carriedOver = dbState[oldM].tracker
+                        .filter(i => i.pinned)
+                        .map(i => ({ ...i, id: Date.now() + Math.random() })); // Create fresh IDs
+                }
+
+                dbState[newM] = { fuel: { budget: 0, used: 0 }, tracker: carriedOver, savings: [] };
                 currentMonth = newM;
+                saveData();
                 updateMonthDropdown();
                 renderUI();
             }
@@ -264,6 +265,7 @@
             const budget = parseFloat(document.getElementById('fuel-budget').value) || 0;
             const used = parseFloat(document.getElementById('fuel-used').value) || 0;
             dbState[currentMonth].fuel = { budget, used };
+            saveData();
             
             const bar = document.getElementById('fuel-bar');
             const status = document.getElementById('fuel-status');
@@ -279,56 +281,46 @@
         }
 
         window.addEntry = function(type, isIncome = false) {
-            dbState[currentMonth][type].push({ id: Date.now(), name: '', amount: 0, isIncome: isIncome });
+            dbState[currentMonth][type].push({ id: Date.now(), name: '', amount: 0, isIncome: isIncome, pinned: false });
+            saveData();
             renderUI();
         }
 
         window.deleteEntry = function(type, id) {
             dbState[currentMonth][type] = dbState[currentMonth][type].filter(item => item.id !== id);
+            saveData();
             renderUI();
         }
         
         window.updateVal = function(type, id, field, val) {
             const item = dbState[currentMonth][type].find(i => i.id === id);
-            if (item) { item[field] = field === 'amount' ? parseFloat(val) || 0 : val; renderUI(); }
+            if (item) { 
+                item[field] = field === 'amount' ? parseFloat(val) || 0 : val; 
+                saveData();
+                renderUI(); 
+            }
+        }
+
+        window.togglePin = function(id) {
+            const item = dbState[currentMonth].tracker.find(i => i.id === id);
+            if (item) {
+                item.pinned = !item.pinned;
+                saveData();
+                renderUI();
+            }
         }
 
         // CSV Export
         document.getElementById('export-csv').addEventListener('click', () => {
             let csv = "Month,Tab,Type,Name,Amount\n";
             Object.keys(dbState).forEach(m => {
-                dbState[m].projected.forEach(i => csv += `${m},Projected,${i.isIncome ? 'Income' : 'Expense'},"${i.name}",${i.amount}\n`);
-                dbState[m].actual.forEach(i => csv += `${m},Actual,${i.isIncome ? 'Income' : 'Expense'},"${i.name}",${i.amount}\n`);
+                dbState[m].tracker.forEach(i => csv += `${m},Tracker,${i.isIncome ? 'Income' : 'Expense'},"${i.name}",${i.amount}\n`);
                 dbState[m].savings.forEach(i => csv += `${m},Savings,Fund,"${i.name}",${i.amount}\n`);
             });
             const blob = new Blob([csv], { type: 'text/csv' });
             const url = window.URL.createObjectURL(blob);
             const a = document.createElement('a'); a.href = url; a.download = 'Finance_Export.csv'; a.click();
         });
-
-        // Charts
-        document.getElementById('toggle-charts').addEventListener('click', () => {
-            const c = document.getElementById('charts-container'); c.classList.toggle('hidden');
-            if(!c.classList.contains('hidden')) renderChart();
-        });
-
-        function renderChart() {
-            const ctx = document.getElementById('expenseChart').getContext('2d');
-            if(chartInstance) chartInstance.destroy();
-            
-            const totalExp = dbState[currentMonth].actual.reduce((a, b) => b.isIncome ? a : a + b.amount, 0);
-            const totalInc = dbState[currentMonth].actual.reduce((a, b) => b.isIncome ? a + b.amount : a, 0);
-            const rem = Math.max(0, totalInc - totalExp);
-
-            chartInstance = new Chart(ctx, {
-                type: 'doughnut',
-                data: {
-                    labels: ['Actual Spent', 'Net Remaining'],
-                    datasets: [{ data: [totalExp, rem], backgroundColor: ['#f43f5e', '#10b981'], borderWidth: 0 }]
-                },
-                options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'bottom', labels: { color: '#f8fafc'} } } }
-            });
-        }
 
         // Core UI Render
         window.renderUI = function() {
@@ -340,34 +332,28 @@
             document.getElementById('fuel-used').value = data.fuel.used;
             updateFuel();
 
-            // Render Projected
-            let projHtml = ''; let projInc = 0; let projExp = 0;
-            data.projected.forEach(item => {
-                item.isIncome ? projInc += item.amount : projExp += item.amount;
-                projHtml += `<div class="bg-slate-800 p-2 rounded flex items-center border-l-4 ${item.isIncome ? 'border-emerald-500' : 'border-rose-500'}">
-                    <input type="text" value="${item.name}" placeholder="Item name" onchange="updateVal('projected', ${item.id}, 'name', this.value)" class="bg-transparent border-none text-sm flex-1 p-1">
+            // Render Tracker
+            let trackerHtml = ''; let tInc = 0; let tExp = 0;
+            data.tracker.forEach(item => {
+                item.isIncome ? tInc += item.amount : tExp += item.amount;
+                trackerHtml += `<div class="bg-slate-800 p-2 rounded flex items-center border-l-4 ${item.isIncome ? 'border-emerald-500' : 'border-rose-500'}">
+                    <input type="text" value="${item.name}" placeholder="Name" onchange="updateVal('tracker', ${item.id}, 'name', this.value)" class="bg-transparent border-none text-sm flex-1 p-1">
                     <span class="text-xs text-slate-400 mx-1">R</span>
-                    <input type="number" value="${item.amount}" onchange="updateVal('projected', ${item.id}, 'amount', this.value)" class="bg-slate-700 text-right w-20 text-sm p-1 mx-2 rounded">
-                    <button onclick="deleteEntry('projected', ${item.id})" class="text-slate-500 hover:text-rose-500 px-2"><i class="fa-solid fa-trash"></i></button>
+                    <input type="number" value="${item.amount}" onchange="updateVal('tracker', ${item.id}, 'amount', this.value)" class="bg-slate-700 text-right w-20 text-sm p-1 mx-2 rounded">
+                    
+                    <button onclick="togglePin(${item.id})" class="px-2 ${item.pinned ? 'text-sky-400' : 'text-slate-500 hover:text-sky-400'}" title="Pin to carry over">
+                        <i class="fa-solid fa-thumbtack"></i>
+                    </button>
+                    <button onclick="deleteEntry('tracker', ${item.id})" class="text-slate-500 hover:text-rose-500 px-2">
+                        <i class="fa-solid fa-trash"></i>
+                    </button>
                 </div>`;
             });
-            document.getElementById('projected-list').innerHTML = projHtml;
-            document.getElementById('proj-remaining').textContent = `R ${projInc - projExp}`;
-
-            // Render Actuals
-            let actHtml = ''; let actInc = 0; let actExp = 0;
-            data.actual.forEach(item => {
-                item.isIncome ? actInc += item.amount : actExp += item.amount;
-                actHtml += `<div class="bg-slate-800 p-2 rounded flex items-center border-l-4 ${item.isIncome ? 'border-emerald-500' : 'border-rose-500'}">
-                    <input type="text" value="${item.name}" placeholder="Expense/Income" onchange="updateVal('actual', ${item.id}, 'name', this.value)" class="bg-transparent border-none text-sm flex-1 p-1">
-                    <span class="text-xs text-slate-400 mx-1">R</span>
-                    <input type="number" value="${item.amount}" onchange="updateVal('actual', ${item.id}, 'amount', this.value)" class="bg-slate-700 text-right w-20 text-sm p-1 mx-2 rounded">
-                    <button onclick="deleteEntry('actual', ${item.id})" class="text-slate-500 hover:text-rose-500 px-2"><i class="fa-solid fa-trash"></i></button>
-                </div>`;
-            });
-            document.getElementById('actual-list').innerHTML = actHtml;
-            document.getElementById('actual-income').textContent = `R ${actInc}`;
-            document.getElementById('actual-total').textContent = `R ${actExp}`;
+            
+            document.getElementById('tracker-list').innerHTML = trackerHtml;
+            document.getElementById('tracker-income').textContent = `R ${tInc}`;
+            document.getElementById('tracker-spent').textContent = `R ${tExp}`;
+            document.getElementById('tracker-net').textContent = `R ${tInc - tExp}`;
 
             // Render Savings
             let savHtml = ''; let savTot = 0;
@@ -382,8 +368,6 @@
             });
             document.getElementById('savings-list').innerHTML = savHtml;
             document.getElementById('savings-total').textContent = `R ${savTot}`;
-            
-            if(!document.getElementById('charts-container').classList.contains('hidden')) renderChart();
         }
     </script>
 </body>
