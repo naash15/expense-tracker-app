@@ -68,7 +68,7 @@
                         <input type="number" id="fuel-budget" class="text-sm p-1" value="0" onchange="updateFuel()">
                     </div>
                     <div>
-                        <label class="text-xs text-slate-500">Used</label>
+                        <label class="text-xs text-slate-500">Used (Syncs Below)</label>
                         <input type="number" id="fuel-used" class="text-sm p-1" value="0" onchange="updateFuel()">
                     </div>
                 </div>
@@ -270,7 +270,7 @@
             const bar = document.getElementById('fuel-bar');
             const status = document.getElementById('fuel-status');
             
-            if (budget === 0) { bar.style.width = '0%'; status.textContent = ''; return; }
+            if (budget === 0) { bar.style.width = '0%'; status.textContent = ''; renderUI(); return; }
             
             const perc = Math.min((used / budget) * 100, 100);
             bar.style.width = `${perc}%`;
@@ -278,6 +278,9 @@
             status.textContent = `R ${budget - used} Left`;
             bar.className = 'progress-bar h-2.5 rounded-full ' + (perc < 60 ? 'bg-emerald-500' : perc < 85 ? 'bg-amber-500' : 'bg-rose-600');
             status.className = 'text-xs font-bold ' + (perc < 60 ? 'text-emerald-500' : perc < 85 ? 'text-amber-500' : 'text-rose-600');
+            
+            // Re-render UI to update the tracker totals immediately
+            renderUI();
         }
 
         window.addEntry = function(type, isIncome = false) {
@@ -315,6 +318,12 @@
             let csv = "Month,Tab,Type,Name,Amount\n";
             Object.keys(dbState).forEach(m => {
                 dbState[m].tracker.forEach(i => csv += `${m},Tracker,${i.isIncome ? 'Income' : 'Expense'},"${i.name}",${i.amount}\n`);
+                
+                // Add fuel usage to export
+                if(dbState[m].fuel && dbState[m].fuel.used > 0) {
+                    csv += `${m},Tracker,Expense,"Fuel (Auto-synced)",${dbState[m].fuel.used}\n`;
+                }
+
                 dbState[m].savings.forEach(i => csv += `${m},Savings,Fund,"${i.name}",${i.amount}\n`);
             });
             const blob = new Blob([csv], { type: 'text/csv' });
@@ -327,13 +336,29 @@
             const data = dbState[currentMonth];
             if(!data) return;
 
-            // Fuel
-            document.getElementById('fuel-budget').value = data.fuel.budget;
-            document.getElementById('fuel-used').value = data.fuel.used;
-            updateFuel();
+            // Update Fuel Input Fields silently if not focused
+            const bInput = document.getElementById('fuel-budget');
+            const uInput = document.getElementById('fuel-used');
+            if (document.activeElement !== bInput) bInput.value = data.fuel.budget;
+            if (document.activeElement !== uInput) uInput.value = data.fuel.used;
 
             // Render Tracker
             let trackerHtml = ''; let tInc = 0; let tExp = 0;
+            
+            // 1. ADD FUEL TO TOTALS AND UI FIRST
+            const fuelUsed = parseFloat(data.fuel.used) || 0;
+            if (fuelUsed > 0) {
+                tExp += fuelUsed;
+                trackerHtml += `<div class="bg-slate-800 p-2 rounded flex items-center border-l-4 border-amber-500 opacity-75 mb-2">
+                    <input type="text" value="Fuel (Auto-synced)" disabled class="bg-transparent border-none text-sm flex-1 p-1 text-slate-400">
+                    <span class="text-xs text-slate-400 mx-1">R</span>
+                    <input type="number" value="${fuelUsed}" disabled class="bg-slate-700 text-right w-20 text-sm p-1 mx-2 rounded text-slate-400">
+                    <button class="px-2 text-transparent cursor-default"><i class="fa-solid fa-thumbtack"></i></button>
+                    <button class="px-2 text-transparent cursor-default"><i class="fa-solid fa-trash"></i></button>
+                </div>`;
+            }
+
+            // 2. RENDER THE REST OF THE ITEMS
             data.tracker.forEach(item => {
                 item.isIncome ? tInc += item.amount : tExp += item.amount;
                 trackerHtml += `<div class="bg-slate-800 p-2 rounded flex items-center border-l-4 ${item.isIncome ? 'border-emerald-500' : 'border-rose-500'}">
@@ -372,3 +397,4 @@
     </script>
 </body>
 </html>
+              
